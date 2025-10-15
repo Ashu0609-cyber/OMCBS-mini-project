@@ -238,4 +238,33 @@ class Prescription(models.Model):
 
     def __str__(self):
         return f"Prescription for {self.appointment.patient.user.username}: {self.medication.name}"
+    # api/models.py
+
+# ... (keep all existing models) ...
+
+class Ward(models.Model):
+    hospital = models.ForeignKey(Hospital, on_delete=models.CASCADE, related_name='wards')
+    name = models.CharField(max_length=100, help_text="e.g., General Ward, ICU, Maternity")
+
+    def _str_(self):
+        return f"{self.name} at {self.hospital.name}"
+
+class Bed(models.Model):
+    ward = models.ForeignKey(Ward, on_delete=models.CASCADE, related_name='beds')
+    bed_number = models.CharField(max_length=20)
+    is_occupied = models.BooleanField(default=False)
+    # When a patient is assigned, this link is made. Can be empty (NULL).
+    patient = models.OneToOneField(PatientProfile, on_delete=models.SET_NULL, null=True, blank=True)
+
+    def _str_(self):
+        return f"Bed {self.bed_number} in {self.ward.name}"
+
+# We also need a way to link staff to a hospital. Let's create a profile for them.
+class StaffProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True, related_name='staffprofile', limit_choices_to={'role': 'staff'}) # You may need to add 'staff' to your User role choices
+    hospital = models.ForeignKey(Hospital, on_delete=models.CASCADE, related_name='staff_members')
+    job_title = models.CharField(max_length=100, help_text="e.g., Nurse, Receptionist, Lab Technician")
+
+    def _str_(self):
+        return f"{self.user.username} - {self.job_title}"
 
